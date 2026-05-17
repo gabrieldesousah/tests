@@ -1,0 +1,72 @@
+:root {
+  font-family: system-ui, sans-serif;
+  line-height: 1.4;
+}
+body {
+  margin: 0;
+  padding: 1.5rem;
+  background: #0b0f14;
+  color: #e8eef5;
+}
+main {
+  max-width: 52rem;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 1.35rem;
+}
+h2 {
+  font-size: 1rem;
+  margin-top: 1.75rem;
+}
+.muted {
+  color: #9aa7b5;
+  font-size: 0.9rem;
+}
+section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #1e2836;
+}
+button {
+  margin: 0.25rem 0.5rem 0.25rem 0;
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #2a3a52;
+  background: #152033;
+  color: #e8eef5;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+input[type="text"] {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  box-sizing: border-box;
+  margin: 0.35rem 0 0.75rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid #2a3a52;
+  background: #0f1624;
+  color: #e8eef5;
+}
+input[type="file"] {
+  display: block;
+  margin: 0.35rem 0 0.75rem;
+}
+pre {
+  background: #0f1624;
+  border: 1px solid #1e2836;
+  border-radius: 8px;
+  padding: 0.75rem;
+  overflow: auto;
+  max-height: 16rem;
+  font-size: 0.78rem;
+}
+code {
+  font-size: 0.85em;
+  color: #c7d8f0;
+}

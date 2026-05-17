@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Embedded Signup + PLBV</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>WhatsApp Embedded Signup → token → PLBV</h1>
+      <p class="muted">
+        Preencha o <code>.env</code>, inicie o servidor e use o fluxo abaixo. O token trocado a partir do
+        <code>code</code> é o da sessão de signup (use-o na chamada da WABA). O envio PLBV usa o
+        <strong>System User</strong> só no servidor.
+      </p>
+
+      <section>
+        <button type="button" id="btn-es" disabled>Iniciar Embedded Signup</button>
+        <span id="sdk-status" class="muted"></span>
+      </section>
+
+      <section>
+        <h2>Eventos (WA_EMBEDDED_SIGNUP)</h2>
+        <pre id="events"></pre>
+      </section>
+
+      <section>
+        <h2>Token (troca de código)</h2>
+        <label>WABA ID (opcional, para buscar portfolio do cliente)</label>
+        <input id="waba-id" type="text" placeholder="WhatsApp Business Account ID" />
+        <button type="button" id="btn-fetch-waba" disabled>GET /api/waba/:id</button>
+        <pre id="token-out"></pre>
+      </section>
+
+      <section>
+        <h2>Submeter PLBV (multipart → Graph API)</h2>
+        <p class="muted">
+          Usa <code>PARTNER_SYSTEM_USER_ACCESS_TOKEN</code> e <code>PARTNER_BUSINESS_PORTFOLIO_ID</code> no servidor.
+        </p>
+        <label>Client business portfolio ID (<code>end_business_id</code>)</label>
+        <input id="client-portfolio" type="text" placeholder="owner_business_info.id do cliente" />
+        <label>Documentos (1–3, PDF/JPEG/PNG, máx. 5 MB cada)</label>
+        <input id="docs" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" />
+        <button type="button" id="btn-plbv" disabled>POST /api/plbv/submit</button>
+        <pre id="plbv-out"></pre>
+      </section>
+    </main>
+
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/pt_BR/sdk.js"></script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

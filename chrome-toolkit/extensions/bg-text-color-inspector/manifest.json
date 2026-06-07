@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BG/Text Color Inspector",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Exibe classes de cor bg-* e text-* ao passar o mouse nos elementos da página.",
   "permissions": ["activeTab"],
   "action": {

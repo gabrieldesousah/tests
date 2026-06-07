@@ -29,8 +29,10 @@
 
   let inspectorActive = false;
   let entries = [];
+  let elementEntries = new WeakMap();
   let activeLabel = null;
   let scheduleUpdate = null;
+  let mutationObserver = null;
   let raf = 0;
 
   function isArbitraryColorClass(cls) {
@@ -55,6 +57,11 @@
     return !denies.some((pattern) => pattern.test(cls));
   }
 
+  function getColorClasses(el) {
+    if (el.tagName === "SCRIPT" || el.tagName === "STYLE") return [];
+    return [...el.classList].filter(isColorClass);
+  }
+
   function renderLabel(classes) {
     const label = document.createElement("div");
     label.className = LABEL_CLASS;
@@ -72,6 +79,21 @@
     label.title = classes.join("\n");
     document.body.appendChild(label);
     return label;
+  }
+
+  function updateLabelContent(entry, classes) {
+    entry.label.replaceChildren();
+    classes.forEach((cls, index) => {
+      const span = document.createElement("span");
+      span.className = cls.startsWith("bg-") ? "bg" : "txt";
+      span.textContent = cls;
+      entry.label.appendChild(span);
+      if (index < classes.length - 1) {
+        entry.label.appendChild(document.createTextNode(" "));
+      }
+    });
+    entry.label.title = classes.join("\n");
+    entry.classes = classes;
   }
 
   const VIEWPORT_PADDING = 4;
@@ -139,6 +161,85 @@
     if (activeLabel === entry) activeLabel = null;
   }
 
+  function unregisterElement(el) {
+    const entry = elementEntries.get(el);
+    if (!entry) return;
+
+    el.removeEventListener("mouseenter", entry.onEnter);
+    el.removeEventListener("mouseleave", entry.onLeave);
+    entry.label.remove();
+
+    if (activeLabel === entry) activeLabel = null;
+
+    elementEntries.delete(el);
+    entries = entries.filter((item) => item !== entry);
+  }
+
+  function registerElement(el) {
+    if (!(el instanceof Element)) return;
+
+    const classes = getColorClasses(el);
+    const existing = elementEntries.get(el);
+
+    if (!classes.length) {
+      if (existing) unregisterElement(el);
+      return;
+    }
+
+    if (existing) {
+      const current = existing.classes.join(" ");
+      const next = classes.join(" ");
+      if (current !== next) updateLabelContent(existing, classes);
+      return;
+    }
+
+    const entry = { el, label: renderLabel(classes), classes };
+    entry.onEnter = () => showLabel(entry);
+    entry.onLeave = () => hideLabel(entry);
+
+    el.addEventListener("mouseenter", entry.onEnter);
+    el.addEventListener("mouseleave", entry.onLeave);
+    elementEntries.set(el, entry);
+    entries.push(entry);
+  }
+
+  function scanNode(node) {
+    if (!(node instanceof Element)) return;
+
+    registerElement(node);
+    node.querySelectorAll("*").forEach(registerElement);
+  }
+
+  function unscanNode(node) {
+    if (!(node instanceof Element)) return;
+
+    unregisterElement(node);
+    node.querySelectorAll("*").forEach(unregisterElement);
+  }
+
+  function startMutationObserver() {
+    mutationObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === "childList") {
+          mutation.addedNodes.forEach(scanNode);
+          mutation.removedNodes.forEach(unscanNode);
+        } else if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "class"
+        ) {
+          registerElement(mutation.target);
+        }
+      }
+    });
+
+    mutationObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  }
+
   function activateInspector() {
     if (inspectorActive) return { active: true, count: entries.length };
 
@@ -173,20 +274,8 @@
       });
     };
 
-    document.querySelectorAll("*").forEach((el) => {
-      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") return;
-
-      const classes = [...el.classList].filter(isColorClass);
-      if (!classes.length) return;
-
-      const entry = { el, label: renderLabel(classes) };
-      entry.onEnter = () => showLabel(entry);
-      entry.onLeave = () => hideLabel(entry);
-
-      el.addEventListener("mouseenter", entry.onEnter);
-      el.addEventListener("mouseleave", entry.onLeave);
-      entries.push(entry);
-    });
+    scanNode(document.documentElement);
+    startMutationObserver();
 
     window.addEventListener("scroll", scheduleUpdate, true);
     window.addEventListener("resize", scheduleUpdate);
@@ -198,11 +287,10 @@
   function deactivateInspector() {
     if (!inspectorActive) return { active: false, count: 0 };
 
-    entries.forEach(({ el, label, onEnter, onLeave }) => {
-      el.removeEventListener("mouseenter", onEnter);
-      el.removeEventListener("mouseleave", onLeave);
-      label.remove();
-    });
+    mutationObserver?.disconnect();
+    mutationObserver = null;
+
+    [...entries].forEach(({ el }) => unregisterElement(el));
 
     document.getElementById(STYLE_ID)?.remove();
     window.removeEventListener("scroll", scheduleUpdate, true);
@@ -210,6 +298,7 @@
     cancelAnimationFrame(raf);
 
     entries = [];
+    elementEntries = new WeakMap();
     activeLabel = null;
     scheduleUpdate = null;
     inspectorActive = false;
